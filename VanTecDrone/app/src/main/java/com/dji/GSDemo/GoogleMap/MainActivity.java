@@ -18,6 +18,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.os.Handler;
+import android.support.annotation.FloatRange;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
@@ -39,6 +40,7 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.view.inputmethod.EditorInfo;
 import android.view.KeyEvent;
+import android.view.WindowManager;
 
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -148,6 +150,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     private WaypointMissionOperator instance;
     private EditText mWaypointLatitude;
     private EditText mWaypointLongitude;
+    private EditText mWaypointAltitude;
     private Button addWaypoint;
 
     // Bluetooth variables
@@ -201,7 +204,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
 
         // Initialize the local bluetooth adapter
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        mBluetoothStatus.setText(mBluetoothAdapter.getAddress() + " " + mBluetoothAdapter.getName());
+        mBluetoothStatus.setText("Not connected to bluetooth");
 
         // Send broadcast flag to send a connection change of the dji aircraft
         IntentFilter filter = new IntentFilter();
@@ -226,6 +229,9 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
                 }
             }
         };
+
+        // Hide keyboard
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
     }
 
     @Override
@@ -339,6 +345,30 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
         if (null != mVideoSurface) {
             mVideoSurface.setSurfaceTextureListener(this);
         }
+
+        // Waypoints with coordinates texts
+        mWaypointLatitude = (EditText) findViewById(R.id.edit_waypoint_latitude);
+        mWaypointLongitude = (EditText) findViewById(R.id.edit_waypoint_longitude);
+        mWaypointAltitude = (EditText) findViewById(R.id.edit_waypoint_altitude);
+        addWaypoint = (Button) findViewById(R.id.button_add_waypoint);
+
+        addWaypoint.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                TextView latText = (TextView) findViewById(R.id.edit_waypoint_latitude);
+                TextView longText = (TextView) findViewById(R.id.edit_waypoint_longitude);
+                TextView altText = (TextView) findViewById(R.id.edit_waypoint_altitude);
+                String lat = latText.getText().toString();
+                String longi = longText.getText().toString();
+                String alti = altText.getText().toString();
+
+                if(lat.length() > 0 && longi.length() > 0 && alti.length() > 0) {
+                    LatLng point = new LatLng(Double.parseDouble(lat), Double.parseDouble(longi));
+                    setWaypoint(point, Float.parseFloat(alti));
+                    mWaypointLatitude.setText("");
+                    mWaypointLongitude.setText("");
+                }
+            }
+        });
     }
 
     // Setup background bluetooth operations
@@ -492,6 +522,16 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
                 } else {
                     setResultToToast("Error in setGoHomeHeightInMeters: " + djiError.getDescription());
                 }
+            }
+        });
+    }
+
+    public void returnToHome() {
+        stopWaypointMission();
+        mFlightController.startGoHome(new CommonCallbacks.CompletionCallback() {
+            @Override
+            public void onResult(DJIError djiError) {
+                setResultToToast("Returning to home: " + (djiError == null ? "Success!" : djiError.getDescription()));
             }
         });
     }
@@ -748,7 +788,6 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
     private void configWayPointMission(){
 
         if (waypointMissionBuilder == null){
-
             waypointMissionBuilder = new WaypointMission.Builder().finishedAction(mFinishedAction)
                     .headingMode(mHeadingMode)
                     .autoFlightSpeed(mSpeed)
@@ -897,25 +936,46 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
 
         LatLng tec = new LatLng(25.65, -100.290943);
         gMap.moveCamera(CameraUpdateFactory.newLatLng(tec));
+
+        gMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
     }
 
     @Override
     public void onMapClick(LatLng point) {
         if (isAdd == true){
-            markWaypoint(point);
-            Waypoint mWaypoint = new Waypoint(point.latitude, point.longitude, altitude);
-            //Add Waypoints to Waypoint arraylist;
-            if (waypointMissionBuilder != null) {
-                waypointList.add(mWaypoint);
-                waypointMissionBuilder.waypointList(waypointList).waypointCount(waypointList.size());
-            }else
-            {
-                waypointMissionBuilder = new WaypointMission.Builder();
-                waypointList.add(mWaypoint);
-                waypointMissionBuilder.waypointList(waypointList).waypointCount(waypointList.size());
-            }
+            setWaypoint(point);
         }else{
             setResultToToast("Cannot Add Waypoint");
+        }
+    }
+
+    public void setWaypoint(LatLng point) {
+        markWaypoint(point);
+        Waypoint mWaypoint = new Waypoint(point.latitude, point.longitude, altitude);
+        //Add Waypoint to Waypoint arraylist;
+        if (waypointMissionBuilder != null) {
+            waypointList.add(mWaypoint);
+            waypointMissionBuilder.waypointList(waypointList).waypointCount(waypointList.size());
+        }else
+        {
+            waypointMissionBuilder = new WaypointMission.Builder();
+            waypointList.add(mWaypoint);
+            waypointMissionBuilder.waypointList(waypointList).waypointCount(waypointList.size());
+        }
+    }
+
+    public void setWaypoint(LatLng point, float waypointAltitude) {
+        markWaypoint(point);
+        Waypoint mWaypoint = new Waypoint(point.latitude, point.longitude, waypointAltitude);
+        //Add Waypoint to Waypoint arraylist;
+        if (waypointMissionBuilder != null) {
+            waypointList.add(mWaypoint);
+            waypointMissionBuilder.waypointList(waypointList).waypointCount(waypointList.size());
+        }else
+        {
+            waypointMissionBuilder = new WaypointMission.Builder();
+            waypointList.add(mWaypoint);
+            waypointMissionBuilder.waypointList(waypointList).waypointCount(waypointList.size());
         }
     }
 
@@ -1063,6 +1123,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
                         case BluetoothService.STATE_LISTEN:
                         case BluetoothService.STATE_NONE:
                             setStatus(R.string.title_not_connected);
+                            mBluetoothStatus.setText("Not connected to bluetooth");
                             break;
                     }
                     break;
@@ -1097,6 +1158,9 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
                         case "gps":
                             sendGPS();
                             break;
+                        case "emergency":
+                            returnToHome();
+                            break;
                     }
 
 
@@ -1106,6 +1170,7 @@ public class MainActivity extends FragmentActivity implements View.OnClickListen
                     mConnectedDeviceName = msg.getData().getString(Constants.DEVICE_NAME);
                     Toast.makeText(MainActivity.this, "Connected to "
                             + mConnectedDeviceName, Toast.LENGTH_SHORT).show();
+                    mBluetoothStatus.setText("Connected to: " + mConnectedDeviceName);
                     break;
                 case Constants.MESSAGE_TOAST:
                     Toast.makeText(MainActivity.this, msg.getData().getString(Constants.TOAST),

@@ -77,17 +77,58 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:layout_weight="1">
-                <EditText
-                    android:id="@+id/edit_waypoint_latitude"
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="bottom" />
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Latitude"
+                        android:textColor="@android:color/black"
+                        android:textSize="17dp"
+                        android:textStyle="bold" />
+                    <EditText
+                        android:id="@+id/edit_waypoint_latitude"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom" />
+                </LinearLayout>
 
-                <EditText
-                    android:id="@+id/edit_waypoint_longitude"
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="bottom" />
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Longitude"
+                        android:textColor="@android:color/black"
+                        android:textSize="17dp"
+                        android:textStyle="bold" />
+                    <EditText
+                        android:id="@+id/edit_waypoint_longitude"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom" />
+                </LinearLayout>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Altitude"
+                        android:textColor="@android:color/black"
+                        android:textSize="17dp"
+                        android:textStyle="bold" />
+                    <EditText
+                        android:id="@+id/edit_waypoint_altitude"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom" />
+                </LinearLayout>
             </LinearLayout>
 
             <Button
